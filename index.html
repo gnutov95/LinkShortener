@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Конвертер</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #052e16;
+            font-family: Arial, sans-serif;
+            color: #d1fae5;
+        }
+
+        .container {
+            background-color: #064e3b;
+            padding: 30px;
+            border-radius: 16px;
+            width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 0;
+            font-size: 20px;
+        }
+
+        input, .output {
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            background-color: #065f46;
+            color: #d1fae5;
+        }
+
+        input::placeholder {
+            color: #6ee7b7;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background-color: #047857;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background-color: #059669;
+        }
+
+        .output {
+            min-height: 40px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Сокращатель ссылок</h1>
+    <input id="url" type="text" placeholder="Введите ссылку..." oninput="validate()" />
+
+    <button id="btn" onclick="send()" disabled>
+        Преобразовать
+    </button>
+    <button onclick="clearAll()" style="flex:1;">
+        Стереть
+    </button>
+
+    <div id="output" class="output">Результат появится здесь...</div>
+</div>
+</body>
+<script>
+    function clearAll() {
+        input.value = "";
+        document.getElementById("output").innerText = "Результат появится здесь...";
+
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+    }
+    const input = document.getElementById("url");
+    const btn = document.getElementById("btn");
+
+    function isValidUrl(url) {
+        try {
+            const u = new URL(url);
+            return u.protocol === "http:" || u.protocol === "https:";
+        } catch {
+            return false;
+        }
+    }
+
+    function validate() {
+        const value = input.value.trim();
+
+        if (isValidUrl(value)) {
+            btn.disabled = false;
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+        } else {
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            btn.style.cursor = "not-allowed";
+        }
+    }
+
+    async function send() {
+        const url = input.value.trim();
+
+        const res = await fetch("/shorten", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ url })
+        });
+
+        const text = await res.text();
+
+        if (!res.ok) {
+            document.getElementById("output").innerText = "Ошибка: " + text;
+            return;
+        }
+
+        const data = JSON.parse(text);
+
+        document.getElementById("output").innerHTML =
+            `<a href="${data.short_url}" target="_blank">${data.short_url}</a>`;
+    }
+
+    // первичная проверка
+    validate();
+</script>
+</html>
